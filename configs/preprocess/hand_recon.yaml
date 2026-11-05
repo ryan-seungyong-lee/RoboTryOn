@@ -1,0 +1,8 @@
+# Stereo fusion of per-view HaWoR reconstructions (preprocessing/hand_recon/fuse_views.py).
+triangulate_wrist: true   # correct each view's wrist depth by triangulating the two views
+max_reproj_px: 8.0        # reject a triangulation whose reprojection error exceeds this
+min_depth: 0.1            # accepted triangulated wrist depth range, metres
+max_depth: 2.0
+depth_smooth: 9           # median filter over the per-frame depth correction, frames
+complement: true          # fill a hand missing in one view from the other view
+complement_min_sep_px: 50 # ... unless it would land this close to that view's other hand

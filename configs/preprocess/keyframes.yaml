@@ -1,0 +1,8 @@
+# Keyframe selection (preprocessing/keyframes/select_keyframes.py, Appendix B.2.1).
+view_index: 0                 # which view's wrist trajectories of hands.npz to use
+smooth_sigma_s: 0.25          # Gaussian smoothing of wrist positions before differentiation, s
+minimum_order: 20             # a speed minimum must be lowest within +-this many frames (1 s at 20 fps)
+disp_quantile: 0.3            # threshold = this quantile of pairwise wrist displacements
+max_gap: 145                  # max frames between consecutive keyframes (about 7 s at 20 fps)
+fallback_conf_quantile: 0.5   # fallback considers frames at/above this confidence quantile
+max_pairs: 400                # frames subsampled to estimate the displacement distribution

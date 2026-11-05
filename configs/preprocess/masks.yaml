@@ -1,0 +1,23 @@
+# SAM3 masks (preprocessing/masks/*.py). Masks are saved tight; robotryon.masks enlarges them.
+human:                       # human arm + hand at inference (sam3_human.py)
+  prompts: ["human arm and hand", "arm in a long sleeve", "sleeve of a shirt",
+            "clothed human arm"]
+  union: true                # sleeved arms need several prompts; take all of them
+  score_threshold: 0.15
+  anchor_frames: [0]
+robot:                       # SAM3 half of the robot mask (sam3_robot.py); set for your robot
+  prompts: ["robotic manipulator arm with cable", "robotic manipulator arm with wires",
+            "robot arm and hand with cable", "robotic manipulator arm"]
+  union: false               # fallback wordings: first prompt that detects anything
+  score_threshold: 0.15
+  new_det_thresh: 0.5
+  anchor_frames: [0]
+object:                      # manipulated object (object_mask.py); prompts come from the CLI
+  union: true
+  score_threshold: 0.3
+  anchor_frames: [0, 0.25, 0.5, 0.75]   # floats in [0, 1) are fractions of the clip
+robot_mask:                  # render ∪ agreeing SAM3 components (urdf_mask.py)
+  render_scale: 0.5          # render at this fraction of the video size
+  dilate_frac: 0.03          # a SAM3 component must lie on the render dilated by this x width
+  min_overlap: 0.2           # ... with at least this fraction of its area
+  min_px: 40                 # drop smaller components

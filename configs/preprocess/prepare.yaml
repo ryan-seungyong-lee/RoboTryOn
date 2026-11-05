@@ -1,0 +1,9 @@
+# Episode preparation drivers (preprocessing/prepare_human_clip.py, prepare_robot_episode.py).
+# Stage configs are referenced by path (relative to this file) so every stage can also be run
+# on its own with the same values; override them as e.g. keyframes.max_gap=120.
+fps: 20                     # human clips are resampled to this frame rate (robot data keeps its own)
+retarget: true              # human skeleton = human hand retargeted to the robot hand
+stages:
+  hand_recon: hand_recon.yaml
+  keyframes: keyframes.yaml
+  masks: masks.yaml

@@ -1,0 +1,35 @@
+# Video synthesis from translated robot keyframes and the human skeleton flow (paper App. B.4).
+model:
+  base: Lightricks/LTX-2.5-Diffusers
+  transformer_subfolder: transformer_full
+  lora: outputs/video/stage2/checkpoint-001000   # directory with pytorch_lora_weights.safetensors
+  attention_backend: native
+
+input:
+  episode: null            # human episode dir: meta.json, keypoints_<view>.npz, keyframes.json
+  keyframes_dir: null      # image-model output for this episode: keyframe_<view>_<frame:06d>.png + keyframes.json
+  views: null              # default: all views in meta.json
+  stereo: true             # generate two views jointly in one sequence; false = one view at a time
+
+output:
+  dir: outputs/video/infer
+
+text:
+  template: "{caption}"
+  embodiment: null         # fills {embodiment} in the template (target robot)
+
+fps: 20
+resolution: [1024, 576]    # output, per view
+skeleton_size: [512, 288]  # as in training: reference downscale 1 at 512x288, 2 at 1024x576
+mask_human: true           # true: skeleton flow on black | false: skeleton drawn on the unmasked human video
+frames_range: [49, 145]    # clip length limits (8k+1)
+seed: 0                    # clip i uses seed + i
+
+two_stage:
+  mode: same_res           # same_res: 8 steps + 3 refine steps at 1024x576
+                           # upsample: 8 steps at 512x288 -> latent upsampler x2 -> 3 steps at 1024x576
+
+skeleton:
+  draw:
+    thickness: 2
+    radius: 3

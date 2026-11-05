@@ -1,0 +1,8 @@
+__pycache__/
+*.egg-info/
+outputs/
+checkpoints/
+*.mp4
+*.safetensors
+.ipynb_checkpoints/
+.pytest_cache/

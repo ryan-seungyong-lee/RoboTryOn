@@ -1,0 +1,15 @@
+# Video model g_phi, stage 2: 1k steps at 1024x576 per view, initialised from the stage-1 LoRA
+# (weights only; fresh optimizer and schedule). The skeleton flow stays at 512x288 and is
+# encoded at half the target resolution (reference downscale 2).
+_base_: ltx25_iclora_stage1.yaml
+
+lora:
+  init: outputs/video/stage1/checkpoint-004000/pytorch_lora_weights.safetensors
+
+data:
+  out_size: [1024, 576]
+
+train:
+  output_dir: outputs/video/stage2
+  steps: 1000
+  save_every: 250

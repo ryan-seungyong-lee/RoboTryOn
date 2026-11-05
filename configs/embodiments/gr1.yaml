@@ -1,0 +1,138 @@
+# Embodiment description read by robotryon.embodiment.load_embodiment(): GR-1 (Fourier GR1T1)
+# with the Fourier 6-DoF hand. Copy it for your own robot. Strings may contain {s}, replaced by
+# each hand's side token from hands.sides. Frame names are "site:<name>", "body:<name>", or a bare
+# name looked up as a site first and then as a body.
+
+name: gr1_fourier
+# GR1T1_fourier_hand_6dof URDF from Fourier (not distributed here); loadable by mujoco==3.11.0
+model_path: path/to/GR1T1_fourier_hand_6dof.urdf
+
+# Layout of the recorded joint vector (LeRobot observation.state / action), one model joint per
+# slot (null: not a model joint). scale maps a recorded value to the model's convention.
+joints:
+  - left_shoulder_pitch_joint
+  - left_shoulder_roll_joint
+  - left_shoulder_yaw_joint
+  - left_elbow_pitch_joint
+  - left_wrist_yaw_joint
+  - left_wrist_roll_joint
+  - left_wrist_pitch_joint
+  - {name: L_pinky_proximal_joint, scale: -1}
+  - {name: L_ring_proximal_joint, scale: -1}
+  - {name: L_middle_proximal_joint, scale: -1}
+  - {name: L_index_proximal_joint, scale: -1}
+  - L_thumb_proximal_pitch_joint
+  - {name: L_thumb_proximal_yaw_joint, scale: -1}
+  - left_hip_roll_joint
+  - left_hip_yaw_joint
+  - left_hip_pitch_joint
+  - left_knee_pitch_joint
+  - left_ankle_pitch_joint
+  - left_ankle_roll_joint
+  - head_yaw_joint
+  - head_roll_joint
+  - head_pitch_joint
+  - right_shoulder_pitch_joint
+  - right_shoulder_roll_joint
+  - right_shoulder_yaw_joint
+  - right_elbow_pitch_joint
+  - right_wrist_yaw_joint
+  - right_wrist_roll_joint
+  - right_wrist_pitch_joint
+  - {name: R_pinky_proximal_joint, scale: -1}
+  - {name: R_ring_proximal_joint, scale: -1}
+  - {name: R_middle_proximal_joint, scale: -1}
+  - {name: R_index_proximal_joint, scale: -1}
+  - R_thumb_proximal_pitch_joint
+  - {name: R_thumb_proximal_yaw_joint, scale: -1}
+  - right_hip_roll_joint
+  - right_hip_yaw_joint
+  - right_hip_pitch_joint
+  - right_knee_pitch_joint
+  - right_ankle_pitch_joint
+  - right_ankle_roll_joint
+  - waist_yaw_joint
+  - waist_pitch_joint
+  - waist_roll_joint
+
+# Slices [start, stop) of the joint vector holding each arm (used by the IDM's wrist correction).
+arm_joints:
+  left: [0, 7]
+  right: [22, 29]
+
+# Passive joints driven by an actuated one: q[joint] = ratio * q[source].
+coupling:
+  - {joint: L_thumb_distal_joint, source: L_thumb_proximal_pitch_joint, ratio: 0.974}
+  - {joint: L_index_intermediate_joint, source: L_index_proximal_joint, ratio: 1.128}
+  - {joint: L_middle_intermediate_joint, source: L_middle_proximal_joint, ratio: 1.131}
+  - {joint: L_ring_intermediate_joint, source: L_ring_proximal_joint, ratio: 1.143}
+  - {joint: L_pinky_intermediate_joint, source: L_pinky_proximal_joint, ratio: 1.129}
+  - {joint: R_thumb_distal_joint, source: R_thumb_proximal_pitch_joint, ratio: 0.974}
+  - {joint: R_index_intermediate_joint, source: R_index_proximal_joint, ratio: 1.128}
+  - {joint: R_middle_intermediate_joint, source: R_middle_proximal_joint, ratio: 1.131}
+  - {joint: R_ring_intermediate_joint, source: R_ring_proximal_joint, ratio: 1.143}
+  - {joint: R_pinky_intermediate_joint, source: R_pinky_proximal_joint, ratio: 1.129}
+
+fixed_joints: {}
+
+hands:
+  sides: {left: L, right: R}
+  # 17 keypoints in robotryon.skeleton order: wrist; thumb base, two joints, tip; then knuckle,
+  # middle joint and tip of index, middle, ring, little. {frame, offset} is a point fixed in a frame.
+  keypoints:
+    - {frame: "body:{s}_hand_base_link", offset: {left: [-0.000056, -0.000976, -0.007700], right: [-0.000056, 0.000966, -0.007606]}}
+    - "body:{s}_thumb_proximal_base_link"
+    - "body:{s}_thumb_proximal_link"
+    - "body:{s}_thumb_distal_link"
+    - "body:{s}_thumb_tip_link"
+    - "body:{s}_index_proximal_link"
+    - "body:{s}_index_intermediate_link"
+    - "body:{s}_index_tip_link"
+    - "body:{s}_middle_proximal_link"
+    - "body:{s}_middle_intermediate_link"
+    - "body:{s}_middle_tip_link"
+    - "body:{s}_ring_proximal_link"
+    - "body:{s}_ring_intermediate_link"
+    - "body:{s}_ring_tip_link"
+    - "body:{s}_pinky_proximal_link"
+    - "body:{s}_pinky_intermediate_link"
+    - "body:{s}_pinky_tip_link"
+
+# One entry per camera view; the keys are the view names of the episode files. The intrinsics are
+# the camera that recorded the video being processed: the robot's head camera for robot data, your
+# own camera for human videos. The mount places the camera on the robot (robot data, IDM wrist correction).
+cameras:
+  ego_view:
+    video_key: observation.images.ego_view
+    intrinsics:
+      width: 1280
+      height: 800
+      fx: 577.4693
+      fy: 577.4693
+      cx: 639.5
+      cy: 399.5
+      model: fisheye                 # pinhole (OpenCV k1 k2 p1 p2 k3) | fisheye (equidistant k1..k4)
+      dist: [0.0, 0.0, 0.0, 0.0]
+      min_depth: 0.15
+    mount:
+      frame: "body:head_pitch_link"
+      rotation:
+        - [-0.039177, -0.995687, 0.084093]
+        - [-0.674990, -0.035682, -0.736963]
+        - [0.736786, -0.085634, -0.670682]
+      translation: [0.103285, 0.011129, -0.087258]
+
+# Bodies rendered into the robot silhouette (name prefixes).
+silhouette:
+  bodies: ["left_upper_arm", "left_lower_arm", "left_hand_", "left_end_effector", "right_upper_arm", "right_lower_arm", "right_hand_", "right_end_effector", "L_", "R_"]
+  exclude: []
+
+# Human hand -> robot hand: AnyTeleop vector retargeting of these hand joints (robotryon.embodiment.retarget).
+retarget:
+  joints: ["{s}_index_proximal_joint", "{s}_middle_proximal_joint", "{s}_ring_proximal_joint",
+           "{s}_pinky_proximal_joint", "{s}_thumb_proximal_pitch_joint", "{s}_thumb_proximal_yaw_joint"]
+  limits: {}                         # optional {joint: [lo, hi]} narrowing the model limits
+  scaling: auto                      # human -> robot vector scale; auto = robot / human palm size
+  smoothing: 0.004                   # weight on the change from the previous frame
+  huber_delta: 0.02                  # m
+  bone_match: true                   # stretch robot fingers to the human's segment lengths

@@ -1,0 +1,50 @@
+# End-to-end RoboTryOn inference: human video -> robot video + action labels.
+#   python scripts/run_pipeline.py --config configs/pipeline.yaml \
+#       input.videos.left=human_left.mp4 input.videos.right=human_right.mp4 \
+#       input.caption="put the ball in the box" embodiment=configs/embodiments/my_robot.yaml \
+#       reference.left=robot_left.png reference.right=robot_right.png output_dir=runs/demo0
+#
+# The stages need different environments, so each one runs as its own process with the python
+# given under `python`. Stage settings come from the per-stage configs; `overrides` lists extra
+# key=value overrides passed to that stage.
+
+output_dir: runs/demo
+embodiment: null              # target robot YAML (configs/embodiments/gr1.yaml)
+idm_embodiment: null          # embodiment name declared in the IDM config (configs/idm/*.yaml)
+
+input:
+  videos: {}                  # {view: human video mp4}; view names as in the embodiment cameras
+  caption: ""                 # task instruction
+  hands: null                 # existing hands.npz (skips HaWoR)
+  object_prompts: []          # SAM3 text prompts for the manipulated objects
+
+reference: {}                 # {view: robot-only reference image}; selects the embodiment
+
+checkpoints:
+  image_base: black-forest-labs/FLUX.2-klein-base-9B
+  image: null                 # image model checkpoint (FFT or LoRA)
+  video: null                 # video model LoRA directory
+  idm: null                   # IDM checkpoint
+
+python:                       # interpreter per stage
+  preprocess: python
+  hawor: python
+  image: python
+  video: python
+  idm: python
+
+hawor_root: null              # HaWoR checkout (needed unless input.hands is given)
+stages: [preprocess, keyframes, video, actions]   # run a subset to resume
+mask_human: true              # video model: false draws the skeleton flow on the human video (the image model always masks)
+
+configs:
+  preprocess: configs/preprocess/prepare.yaml
+  image: configs/image/infer.yaml
+  video: configs/video/infer.yaml
+  idm: configs/idm/label.yaml
+
+overrides:
+  preprocess: []
+  image: []
+  video: []
+  idm: []

@@ -1,0 +1,53 @@
+# Video model g_phi, stage 1: in-context LoRA on LTX-2.5 at 512x288 per view (paper Table 4).
+# Global batch 16 = 4 GPUs x batch 1 x grad_accum 4. Run with `accelerate launch --num_processes 4`.
+model:
+  base: Lightricks/LTX-2.5-Diffusers        # HF repo id or local directory
+  transformer_subfolder: transformer_full   # the non-distilled transformer
+  attention_backend: native
+
+lora:
+  rank: 64
+  alpha: 64                                  # alpha = rank
+  init: null                                 # path to a pytorch_lora_weights.safetensors to start from
+
+data:
+  roots: []                                  # dataset roots: paths or {path: ..., weight: ...}
+  fps: 20                                    # episodes must already be at this rate
+  out_size: [512, 288]                       # generated resolution, per view
+  skeleton_size: [512, 288]                  # skeleton-flow (reference) resolution; out_size must be a multiple
+  frames_range: [49, 145]                    # clip length, 8k+1 values in this range
+  min_scale: 0.9                             # random crop keeps >= 90% of the frame width
+  flip_p: 0.5                                # horizontal mirror (stereo pairs also swap views)
+  mono_p: 0.15                               # stereo episodes used as a single random view
+  caption_template: "{caption}"              # also accepts {embodiment} from meta.json
+  num_workers: 8
+
+skeleton:
+  augment:                                   # paper Sec. 3.2, applied per clip
+    max_shift_frac: 0.5
+    p_drop_all: 0.2
+    p_drop_keypoint: 0.2
+  draw:
+    thickness: 2
+    radius: 3
+
+keyframes:
+  count_weights: {1: 0.1, 2: 0.2, 3: 0.4, 4: 0.3}   # 1-4 keyframes, the first frame always one
+  include_last_p: 0.5                        # chance the clip's last frame is one of the others
+
+text:
+  embeds: outputs/video/text_embeds_train.pt # caption cache, built at start-up when missing
+
+train:
+  output_dir: outputs/video/stage1
+  steps: 4000
+  lr: 1.0e-4
+  lr_end_factor: 1.0                         # 1.0 = constant learning rate
+  betas: [0.9, 0.999]
+  weight_decay: 0.01
+  grad_accum: 4
+  max_grad_norm: 1.0
+  seed: 0
+  save_every: 500
+  log_every: 10
+  resume: true                               # continue from output_dir/resume_state.pt if present

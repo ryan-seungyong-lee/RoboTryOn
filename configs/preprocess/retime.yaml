@@ -1,0 +1,4 @@
+# Per-phase retiming (preprocessing/retime.py, Appendix B.2.5). Optional.
+target_speed: 0.15     # m/s; one value, or one per phase (mean teleop wrist speed of that phase)
+multiple: 1.0          # 1.0 = teleoperated speed, 2.0 = twice that
+smooth_sigma_s: 0.1    # wrist smoothing before measuring speed, s

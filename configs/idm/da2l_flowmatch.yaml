@@ -1,0 +1,93 @@
+# IDM: Depth Anything V2-L trunk + DreamGen flow-matching action head, one model shared by
+# all embodiments (paper App. B.2.6, Table 4). Global batch = train.batch_size x #GPUs
+# (4 GPUs x 32 = 128).
+#   torchrun --nproc_per_node=4 scripts/train_idm.py --config configs/idm/da2l_flowmatch.yaml \
+#       data.roots.openarm_rh56f1=/path/to/lerobot_openarm data.roots.rby1_wujihand2=... 
+
+model:
+  vision_tower: depth-anything/Depth-Anything-V2-Large-hf
+  vision_hidden_size: 1024
+  hidden_size: 1024
+  action_dim: 66               # widest embodiment; narrower ones are zero-padded and masked
+  action_horizon: 20           # H: chunk length
+  max_num_embodiments: 32
+  max_num_views: 6
+  max_seq_len: 1024
+  max_vl_tokens: 112           # visual context length (image tokens right-aligned)
+  tokens_per_image: 16
+  frozen_vision_layers: [11]   # ViT layer kept frozen (of 24)
+  num_inference_timesteps: 16
+  num_timestep_buckets: 1000
+  noise_beta_alpha: 1.5
+  noise_beta_beta: 1.0
+  noise_s: 0.999
+  dit: {num_layers: 8, num_attention_heads: 16, attention_head_dim: 64, dropout: 0.2,
+        output_dim: 1024, interleave_self_attention: true}
+  vl_self_attention: {num_layers: 4, num_attention_heads: 16, attention_head_dim: 64, dropout: 0.2}
+
+data:
+  frame_gap: 20                # K: the IDM sees frames t and t+K (1 s at 20 fps)
+  fov_range: [0.85, 1.15]      # train-time zoom-in / zoom-out
+  color_jitter: [0.2, 0.2, 0.2, 0.1]   # brightness, contrast, saturation, hue
+  max_episodes: null           # per dataset; for smoke tests
+  use: null                    # subset of embodiment names to train on (null = all)
+  roots: {}                    # name -> dataset root, overrides embodiments[*].root
+  embodiments:
+    - name: openarm_rh56f1
+      embodiment_id: 29
+      weight: 0.3333333333
+      root: data/idm/openarm_rh56f1
+      action_dim: 28
+      views: [camera_ego_left, camera_ego_right]
+      view_ids: [0, 1, 2, 3]
+      video_size: [512, 288]
+      action_groups: [neck_joints, left_arm_joints, right_arm_joints, left_hand_joints, right_hand_joints]
+      hand_groups: [left_hand_joints, right_hand_joints]
+      norm: q99
+      mirror:                  # sagittal reflection, p = 0.5 (stats.json must be symmetrised)
+        prob: 0.5
+        view_swap: [[camera_ego_left, camera_ego_right]]
+        swap:
+          - [left_arm_joints, right_arm_joints, [-1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0]]
+          - [left_hand_joints, right_hand_joints, null]
+        sign: {neck_joints: [1.0, -1.0]}
+    - name: rby1_wujihand2
+      embodiment_id: 28
+      weight: 0.3333333333
+      root: data/idm/rby1_wujihand2
+      action_dim: 66
+      views: [camera_ego_left, camera_ego_right]
+      view_ids: [0, 1, 2, 3]
+      video_size: [512, 288]
+      action_groups: [wheels, torso, right_arm, right_hand, left_arm, left_hand, head]
+      hand_groups: [right_hand, left_hand]
+      norm: q99_const
+    - name: gr1_fourier
+      embodiment_id: 27
+      weight: 0.3333333333
+      root: data/idm/gr1_fourier
+      action_dim: 44
+      views: [ego_view]
+      view_ids: [0, 2]         # mono = the left-eye slots of (t0, t1)
+      video_size: [512, 320]
+      action_groups: [left_arm, left_hand, left_leg, neck, right_arm, right_hand, right_leg, waist]
+      hand_groups: [left_hand, right_hand]
+      norm: q99
+
+train:
+  output_dir: outputs/idm
+  batch_size: 32               # per GPU
+  grad_accum_steps: 1
+  max_steps: 60000
+  save_steps: 5000
+  learning_rate: 1.0e-4
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  weight_decay: 1.0e-5
+  adam_betas: [0.95, 0.999]
+  max_grad_norm: 1.0
+  bf16: true
+  num_workers: 8
+  seed: 42
+  report_to: tensorboard
+  resume: false

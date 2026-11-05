@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robotryon"
+version = "0.1.0"
+description = "RoboTryOn: synthesizing dexterous robot demonstrations from human videos via virtual try-on"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy", "opencv-python", "pyyaml", "safetensors", "pillow", "tqdm", "scipy",
+]
+
+[project.optional-dependencies]
+gen = ["torch>=2.5", "diffusers>=0.39", "transformers", "peft", "accelerate"]
+idm = ["torch>=2.5", "torchvision", "transformers", "accelerate", "diffusers", "pandas", "pyarrow", "decord"]
+preprocess = ["mujoco==3.11.0", "pyarrow"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

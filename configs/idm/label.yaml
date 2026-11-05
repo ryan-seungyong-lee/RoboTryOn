@@ -1,0 +1,43 @@
+# Label a generated robot video with the IDM (paper Sec. 3.4).
+#   python scripts/label_actions.py --config configs/idm/label.yaml \
+#       label.checkpoint=/path/idm label.embodiment=openarm_rh56f1 \
+#       label.videos=[clip_left.mp4,clip_right.mp4] label.output_dir=outputs/labels/clip
+_base_: da2l_flowmatch.yaml    # embodiment declarations (used when the checkpoint has none)
+
+label:
+  checkpoint: checkpoints/idm
+  embodiment: openarm_rh56f1
+  videos: []                   # one mp4 per view, in the embodiment's view order; a single
+                               # video for a stereo embodiment is fed to both eyes
+  output_dir: outputs/labels
+  batch_size: 32               # sliding windows per forward pass
+  seed: 0                      # flow-matching noise
+  smooth_window: 9             # Savitzky-Golay window, arm-like groups
+  hand_smooth_window: 5        # Savitzky-Golay window, hand groups
+  smooth_order: 2
+  state_delay: 4               # d in q_t = a_{t-d}
+
+wrist_correction:              # scripts/correct_wrists.py
+  embodiment: null             # robot YAML (configs/embodiments/gr1.yaml): FK and head camera
+  hand3d: null                 # npz: wrist (T, 2, 3) metres in the first view's camera frame,
+                               # confidence (T, 2); hand 0 = left, 1 = right
+  T_base_cam: null             # 4x4 head-camera pose in the robot base frame, used when the
+                               # embodiment does not provide camera_pose(q, view)
+  hand_scale: 1.0              # scale of the robot hand about its wrist (end effector offset)
+  ee_keypoint: 0               # hand keypoint that meets the reconstructed wrist (0 = wrist)
+  min_confidence: 0.5
+  reject_enter_mm: 150.0
+  reject_exit_mm: 80.0
+  reject_hard_mm: 500.0
+  reject_ref_n: 15
+  gap_fill: 6                  # frames
+  cutoff_hz: 2.0               # Butterworth cutoff on the wrist offset
+  fps: 20.0
+  ramp: 8                      # frames of blend at segment edges
+  smooth_window: 9
+  smooth_order: 2
+  ik_iters: 30
+  w_rot: 2000.0                # mm per rad of wrist-orientation error
+  damping: 0.5                 # x 1e4, toward the IDM arm joints
+  step_cap: 0.08               # rad per iteration
+  fd_eps: 1.0e-3

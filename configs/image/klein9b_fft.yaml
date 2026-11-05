@@ -1,0 +1,78 @@
+# Keyframe-translation model f_theta: full fine-tune of FLUX.2 [klein] 9B Base (paper Table 4).
+# Launch: accelerate launch --num_processes 4 scripts/train_image.py --config configs/image/klein9b_fft.yaml \
+#           model.base=<FLUX.2-klein-base-9B snapshot> data.roots='[<root>, ...]' output_dir=<dir>
+# Global batch = train.batch_size (per GPU) x GPUs x train.grad_accum = 4 x 4 x 4 = 64 on 4 GPUs.
+# On 8 GPUs use train.grad_accum=2.
+
+model:
+  base: black-forest-labs/FLUX.2-klein-base-9B   # HF id or local snapshot directory
+
+output_dir: runs/image_fft
+
+data:
+  roots: []                  # episode roots; an entry may be {path: <root>, weight: <w>} to reweight
+  stereo_p: 0.75             # stereo : mono = 3 : 1 (batches are all-stereo or all-mono)
+  ref_window_sec: [2.0, 5.0] # reference drawn uniformly 2-5 s before the target (frame 0 if too early)
+  p_robot_only: 0.05         # reference replaced by a robot-only exemplar of another episode
+  ref_skeleton_p: 0.5        # paint the target skeleton on the reference (sequential or robot-only)
+  robot_only:
+    erode: 7                 # px, erode the robot mask so no background leaks into the exemplar
+    background: 255          # fill value outside the robot (white)
+    min_area: 0.002          # minimum robot pixel fraction for an exemplar frame
+
+image:
+  long_edge: 1024            # 1024 x 576 per view
+  aspect: [16, 9]            # other aspect ratios are cropped to this first
+  crop_anchor: bottom        # keep the bottom edge (where the arms enter) when cropping height
+
+masks:
+  dilate_min: 3              # per-arm random dilation kernel range (px at model resolution)
+  dilate_max: 71
+  bonus: 21                  # dilation floor raise for thin (human) arms; also added at inference
+  bonus_embodiments: [human] # meta.json embodiment tags that get the bonus during training
+  p_object_cut: 0.5          # cut the eroded object out of the hole (when an object mask exists)
+  obj_erode_min: 3
+  obj_erode_max: 21
+  fov:
+    crop_min: 0.85           # joint field-of-view scale ~ U[crop_min, scale_max]: < 1 crops, > 1 pads
+    scale_max: 1.15
+    flip_prob: 0.0           # a mirrored robot is a robot that cannot exist
+
+skeleton:
+  augment:                   # paper App. B.2.2
+    max_shift_frac: 0.5      # displace each keypoint by up to half its finger segment
+    p_drop_all: 0.2
+    p_drop_keypoint: 0.2
+  thickness: [2, 6]          # stroke width jitter (px); joint radius = 1.5 x width
+
+caption:                     # hand-state prompt of the target frame (robotryon.captions)
+  cuts:                      # closure (rad) / dorsumness (deg) edges -> words, humans and robots alike
+    closure: [0.95, 1.15]
+    facing: [49.0, 121.0]
+  p_drop_hands: 0.2          # drop the hand words (instruction only)
+  p_uncond: 0.1              # empty prompt: trains the unconditional branch used by CFG
+
+text:
+  cache_dir: runs/text_cache # one safetensors file per prompt, filled at trainer start-up
+
+train:
+  mode: fft                  # fft (FSDP full shard) | lora
+  max_steps: 5000
+  batch_size: 4              # per GPU
+  grad_accum: 4
+  gradient_checkpointing: true
+  checkpoint_every: 1000
+  resume: true               # keep <output_dir>/resume_state/ and continue from it on restart
+  log_every: 20
+  num_workers: 8
+  seed: 42
+
+optim:
+  lr: 1.0e-5
+  schedule: cosine
+  warmup_steps: 200
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  weight_decay: 1.0e-4
+  max_grad_norm: 1.0
+  x_embedder_lr: null        # null = optim.lr; the widened patch embedding is always trained in full

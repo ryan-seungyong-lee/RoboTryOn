@@ -1,0 +1,32 @@
+# Autoregressive keyframe translation (paper Eq. 3.2). See scripts/infer_keyframes.py.
+
+model:
+  base: black-forest-labs/FLUX.2-klein-base-9B
+checkpoint: null             # trained checkpoint dir (FFT: has transformer/; LoRA: has pytorch_lora_weights.safetensors)
+
+episodes: []                 # preprocessed human episode directories (with keyframes.json)
+reference: {}                # {view: robot-only reference image}; a single path is used for every view
+output_dir: runs/keyframes
+
+views: auto                  # auto (joint stereo when the episode has two views) | stereo | mono
+ref_skeleton: false          # false: reuse the previous keyframe's latent as reference tokens
+                             # true: decode it, paint the current skeleton, re-encode
+steps: 30
+guidance_scale: 3.5          # true CFG against the empty prompt
+seed: 2024                   # keyframe t uses seed + t
+
+image:
+  long_edge: 1024
+  aspect: [16, 9]
+  crop_anchor: bottom
+
+masks:                       # inference dilation = (dilate_min + dilate_max) // 2 + bonus = 58 px
+  dilate_min: 3
+  dilate_max: 71
+  bonus: 21
+  obj_erode: 9               # px, erode the object mask before subtracting it from the hole
+
+caption:                     # per-keyframe hand-state prompt (robotryon.captions)
+  cuts:                      # closure (rad) / dorsumness (deg) edges -> open|half-closed|closed fist, palm|edge-on|back
+    closure: [0.95, 1.15]
+    facing: [49.0, 121.0]

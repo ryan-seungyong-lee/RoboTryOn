@@ -1,0 +1,20 @@
+# Keyframe-translation model f_theta, LoRA variant. Same data, schedule and batch as the full
+# fine-tune (klein9b_fft.yaml, paper Table 4) except the learning rate: the paper reports only the
+# full fine-tune; 1.0e-4 is the LoRA learning rate we use. The widened x_embedder is trained in full.
+# Global batch = 8 (per GPU) x 4 GPUs x 2 (grad accum) = 64.
+_base_: klein9b_fft.yaml
+
+output_dir: runs/image_lora
+
+lora:
+  rank: 128
+  alpha: 128
+  dropout: 0.0
+
+train:
+  mode: lora
+  batch_size: 8
+  grad_accum: 2
+
+optim:
+  lr: 1.0e-4
