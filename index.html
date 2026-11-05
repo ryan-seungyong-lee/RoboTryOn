@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="./static/images/favicon.png">
+  <link rel="apple-touch-icon" href="./static/images/apple-touch-icon.png">
+  <title>RoboTryOn: Synthesizing Dexterous Robot Demonstrations from Human Videos via Virtual Try-On</title>
+  <meta name="description" content="RoboTryOn turns an egocentric human video into a robot demonstration by trying the robot on: it keeps the demonstrated motion and swaps the human for the robot.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .publication-title, .title { font-family: 'Inter', sans-serif; }
+    body { color: #2b2b33; background: #fff; }
+    .hero { background: linear-gradient(180deg, #EEEBFB 0%, #F7F6FD 38%, #ffffff 72%); }
+    .hero .hero-body { padding-top: 4.5rem; }
+    .publication-title { font-size: 4.2rem !important; font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 0.9rem !important; color: #1d1b2e; }
+    .publication-title .accent { background: linear-gradient(90deg, #5B4BC4, #9A6BE0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero .subtitle { font-weight: 500; color: #55536a; letter-spacing: -0.01em; max-width: 46rem; margin: 0 auto 1.6rem !important; line-height: 1.4; }
+    .publication-authors { font-size: 1.1rem; }
+    .publication-authors a { color: #2b2b33; font-weight: 600; border-bottom: 1.5px solid #C9C1F0; }
+    .publication-authors a:hover { color: #5B4BC4; border-bottom-color: #5B4BC4; }
+    .publication-authors sup { color: #7A70C9; }
+    .affil { font-size: 0.95rem; color: #77758a; margin-top: 0.25rem; }
+    .publication-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 1.6rem; }
+    .link-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.15rem; border-radius: 12px;
+                background: #fff; border: 1px solid #DCD7F3; color: #2b2b33; font-weight: 600; font-size: 0.98rem;
+                box-shadow: 0 1px 2px rgba(40,30,90,.06); transition: all .15s; }
+    .link-btn:hover { border-color: #5B4BC4; color: #5B4BC4; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,75,196,.15); }
+    .link-btn svg { width: 1.05em; height: 1.05em; fill: currentColor; }
+    .link-btn .emoji { font-size: 1.1em; line-height: 1; }
+    .link-btn.is-soon { opacity: .5; cursor: not-allowed; }
+    .link-btn.is-soon:hover { transform: none; box-shadow: 0 1px 2px rgba(40,30,90,.06); border-color: #DCD7F3; color: #2b2b33; }
+    .section h2.title { font-weight: 700; letter-spacing: -0.02em; }
+    .section h2.title::after { content: ""; display: block; width: 44px; height: 4px; border-radius: 2px; margin: 0.6rem auto 0;
+                               background: linear-gradient(90deg, #5B4BC4, #9A6BE0); }
+    .tldr { margin-top: 2rem; padding: 1rem 1.5rem; border: 1px solid #E4E0F7; background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(40,30,90,.05); text-align: left; font-size: 1.05rem; line-height: 1.55; }
+    .tldr strong { color: #5B4BC4; }
+    .teaser { display: block; width: 100%; margin-top: 1.75rem; border-radius: 14px; box-shadow: 0 10px 30px rgba(40,30,90,.12); }
+    @media screen and (max-width: 768px) { .publication-title { font-size: 2.9rem !important; } .hero .hero-body { padding-top: 3rem; } }
+    .hero .hero-body { padding-bottom: 1.5rem; }
+    .section { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+    .figure-img { max-width: 100%; height: auto; border-radius: 6px; }
+    .caption { font-size: 0.9rem; color: #555; margin-top: 0.5rem; }
+    @media screen and (max-width: 768px) { .has-text-justified { text-align: left !important; } }
+    /* image grids: rows = examples, columns = sources */
+    .grid { display: grid; gap: 6px; align-items: center; }
+    .grid img { width: 100%; height: auto; border-radius: 4px; display: block; }
+    .grid .head { font-family: 'Inter', sans-serif; font-weight: 600; text-align: center; font-size: 0.95rem; }
+    .grid .head.ours { color: #5B4BC4; }
+    .grid-emb { grid-template-columns: repeat(4, 1fr); }
+    .grid-gap { grid-template-columns: repeat(5, 1fr); }
+    .grid-ag { grid-template-columns: repeat(3, 1fr); }
+    .rollouts { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .rollouts figure { margin: 0; }
+    .rollouts figcaption { font-family: 'Inter', sans-serif; font-weight: 600; text-align: center; margin-bottom: 0.3rem; }
+    .rollouts video { width: 100%; display: block; border-radius: 6px; background: #000; }
+    .pair-label { display: flex; font-size: 0.8rem; color: #666; }
+    .pair-label span { flex: 1; text-align: center; }
+    @media screen and (max-width: 768px) { .rollouts { grid-template-columns: 1fr; } }
+    .robot-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .robot-tab { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 1rem; padding: 0.45rem 1.4rem; border-radius: 999px;
+                 border: 2px solid #5B4BC4; background: #fff; color: #5B4BC4; cursor: pointer; position: relative; overflow: hidden; }
+    .robot-tab.is-active { background: #5B4BC4; color: #fff; }
+    .robot-tab .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.7); width: 0; }
+    .rollout-panes .rollouts { display: none; }
+    .rollout-panes .rollouts.is-active { display: grid; animation: fadein 0.4s; }
+    .rollouts figure:last-child:nth-child(odd) { grid-column: 1 / -1; width: calc(50% - 0.625rem); justify-self: center; }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+    @media screen and (max-width: 768px) { .rollouts figure:last-child:nth-child(odd) { width: 100%; } }
+    @media screen and (max-width: 600px) { .grid .head { font-size: 0.75rem; } }
+    /* results table */
+    .table-scroll { overflow-x: auto; }
+    .results-table { margin: 0 auto; font-size: 0.95rem; }
+    .results-table th, .results-table td { text-align: center !important; vertical-align: middle; white-space: nowrap; }
+    .results-table td:first-child { text-align: left !important; }
+    .results-table tr.ours td { font-weight: 700; color: #5B4BC4; }
+    .results-table tr.sep td { border-top: 2px solid #b5b5b5; }
+    .stat { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 700; color: #5B4BC4; line-height: 1.1; }
+    .stat-label { font-size: 0.9rem; color: #555; }
+    pre { background: #f5f5f5; padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto; }
+    .bibtex-wrap { position: relative; }
+    .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; display: inline-flex; align-items: center; gap: 0.35rem;
+                font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: #4a4a4a;
+                background: #fff; border: 1px solid #dbdbdb; border-radius: 6px; padding: 0.3rem 0.6rem; cursor: pointer; }
+    .copy-btn:hover { border-color: #5B4BC4; color: #5B4BC4; }
+    .copy-btn.done { border-color: #48c78e; color: #257953; }
+    .copy-btn svg { width: 0.95em; height: 0.95em; fill: currentColor; }
+    .section h2.title:not(.has-text-centered)::after { margin-left: 0; }
+    /* analysis */
+    .an-h { margin-bottom: 0.9rem !important; }
+    .an-p { color: #3a3a46; line-height: 1.6; margin-bottom: 1rem; }
+    .an-p.small { font-size: 0.92rem; color: #55536a; margin: 0.9rem 0 0; }
+    .vg { display: grid; grid-template-columns: 3fr 1fr; gap: 1.25rem; align-items: center; margin-bottom: 1rem; }
+    .vg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .vg-grid figure { margin: 0; }
+    .vg-grid img, .ag-grid img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border-radius: 5px; }
+    .vg-umap { text-align: center; }
+    .ghead { font-size: 0.8rem; font-weight: 600; text-align: center; margin-bottom: 0.25rem; color: #2b2b33; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gsub { font-size: 0.72rem; color: #77758a; text-align: center; margin-top: 0.25rem; line-height: 1.25; }
+    .umap { width: 100%; max-width: 220px; }
+    .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.9rem; font-size: 0.8rem; color: #55536a; margin: 0.3rem 0 0.6rem; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.35rem; vertical-align: -1px; }
+    .an-card { border: 1px solid #E4E0F7; border-radius: 14px; padding: 1.1rem 1.25rem 1.25rem; margin-bottom: 1.1rem; background: #fff; box-shadow: 0 1px 3px rgba(40,30,90,.05); }
+    .an-step { font-weight: 700; font-size: 1rem; margin-bottom: 0.9rem; color: #1d1b2e; }
+    .an-step span { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+                     background: #EEEBFB; color: #5B4BC4; font-size: 0.85rem; margin-right: 0.5rem; }
+    .ag-row { display: grid; grid-template-columns: 5.3fr 1.9fr; gap: 1rem; align-items: end; }
+    .ag-a { display: grid; gap: 6px; }
+    .ag-grid { display: grid; grid-template-columns: 1fr 0.2rem 0.9rem repeat(4, 1fr); gap: 6px; align-items: center; }
+    .ag-grid .cap { margin-top: 0.1rem; }
+    .rowlab { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.72rem; font-weight: 600; color: #55536a; text-align: center; }
+    .mk-wrap { position: relative; }
+    .mk { position: absolute; top: 4px; right: 4px; width: 1.2rem; height: 1.2rem; border-radius: 50%; display: inline-flex;
+           align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: #fff; }
+    .mk.ok { background: #2E9E5B; } .mk.no { background: #D64545; }
+    .cap { font-size: 0.82rem; color: #55536a; text-align: center; margin-top: 0.4rem; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: end; }
+    .chart { width: 100%; height: auto; display: block; }
+    .chart .tick { font-size: 11.5px; fill: #77758a; } .chart .axl { font-size: 12.5px; fill: #55536a; }
+    .chart .val { font-size: 12px; fill: #2b2b33; font-weight: 600; }
+    .chart .ax { stroke: #9a98aa; stroke-width: 1; } .chart .grid { stroke: #ECEAF4; stroke-width: 1; }
+    @media screen and (max-width: 768px) {
+      .vg, .ag-row, .two { grid-template-columns: 1fr; }
+      .ag-c svg { max-width: 280px; margin: 0 auto; }
+      .vg-grid { gap: 3px; } .ghead { font-size: 0.66rem; } .gsub { font-size: 0.6rem; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ============================== Hero ============================== -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="has-text-centered">
+        <h1 class="title is-1 publication-title">Robo<span class="accent">TryOn</span></h1>
+        <h2 class="subtitle is-4">Synthesizing Dexterous Robot Demonstrations from Human Videos via Virtual Try-On</h2>
+        <div class="publication-authors">
+          <span class="author-block"><a href="https://ryan-seungyong-lee.github.io/">Seungyong Lee</a><sup>1</sup>,</span>
+          <span class="author-block"><a href="https://suhyeok-jang.github.io/">Suhyeok Jang</a><sup>1,2</sup>,</span>
+          <span class="author-block"><a href="https://eurominyoung186.github.io/">Minyoung Kim</a><sup>3</sup>,</span>
+          <span class="author-block"><a href="https://alinlab.kaist.ac.kr/shin.html">Jinwoo Shin</a><sup>1,2</sup></span>
+        </div>
+        <div class="affil"><sup>1</sup>KAIST&nbsp;&nbsp;&nbsp;<sup>2</sup>RLWRLD&nbsp;&nbsp;&nbsp;<sup>3</sup>Korea University</div>
+
+        <div class="publication-links">
+          <a class="link-btn" href="https://arxiv.org/abs/2611.05163" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M3.8 2.4 10 9.9 5.4 16.4c-.5.7-.4 1.6.3 2.1l.1.1c.6.4 1.5.3 2-.3l4.2-5.6 7.4 8.9c.5.6 1.4.7 2 .2.6-.5.7-1.4.2-2L13.6 11l5-6.6c.5-.6.4-1.5-.3-2s-1.5-.4-2 .3l-4.6 6.1L6 1.4c-.5-.6-1.4-.7-2-.2-.6.4-.7 1.3-.2 1.9z"/></svg><span>arXiv</span></a>
+          <a class="link-btn" href="https://github.com/ryan-seungyong-lee/RoboTryOn" target="_blank" rel="noopener"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>Code</span></a>
+          <a class="link-btn" href="https://huggingface.co/RyanL22/RoboTryOn" target="_blank" rel="noopener"><span class="emoji">&#129303;</span><span>Checkpoints</span></a>
+          <a class="link-btn" href="https://huggingface.co/spaces/RyanL22/RoboTryOn" target="_blank" rel="noopener"><span class="emoji">&#129303;</span><span>Demo</span></a>
+        </div>
+
+        <div class="tldr">
+          <p><strong>TL;DR:</strong> Virtual try-on keeps the person and swaps the garment; RoboTryOn keeps the
+          demonstrated motion and swaps the human for the robot. From an egocentric human video alone, it synthesizes
+          a robot demonstration (video and joint actions) that teaches a policy tasks it has never been teleoperated on.</p>
+        </div>
+
+        <video class="teaser" src="./static/videos/teaser.mp4" autoplay muted loop playsinline controls preload="auto"></video>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== Abstract ============================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Abstract</h2>
+    <div class="content has-text-justified">
+      <p>
+        Robot foundation models have shown remarkable performance in robot control, yet adapting them to a new task
+        still relies heavily on teleoperated demonstrations. Egocentric human videos offer a scalable substitute, but
+        overlaying rendered robots on human videos or retargeting human poses into robot actions leaves significant
+        visual or action gaps for high-DoF robot embodiments. We propose <b>RoboTryOn</b>, which treats human-to-robot
+        translation as virtual try-on: RoboTryOn converts a human video into a video of the target robot specified by a
+        reference image, while preserving the original task, objects, and background. We translate selected keyframes
+        autoregressively and use them to guide video synthesis with motion conditioned on the human hand skeleton, and
+        an inverse dynamics model with depth features infers the action labels. Across multiple humanoid embodiments,
+        policies trained with our synthetic data improve the average success rate on novel tasks, including bimanual
+        manipulation, from 2% to 60% without any real robot demonstration of those tasks, and match policies trained on
+        teleoperated demonstrations at about a third of the collection cost.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== Method ============================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Method</h2>
+    <img class="figure-img" src="./static/images/method.jpg" alt="RoboTryOn pipeline">
+    <div class="columns" style="margin-top: 1rem;">
+      <div class="column">
+        <p><b>1. Keyframe translation.</b> An image model inpaints the masked human arm with the target robot, guided by
+        the hand skeleton, using the previous robot keyframe as the reference.</p>
+      </div>
+      <div class="column">
+        <p><b>2. Video synthesis.</b> A video model fills in the motion between the robot keyframes, following the
+        human hand-skeleton flow.</p>
+      </div>
+      <div class="column">
+        <p><b>3. Action labeling.</b> An inverse dynamics model reads joint-space actions from the synthesized video;
+        the wrists are corrected with the reconstructed human hands.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== One human video, various embodiments ============================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">One Human Video, Various Embodiments</h2>
+    <div class="grid grid-emb">
+      <div class="head">Human</div><div class="head">OpenArm + RH56F1</div><div class="head">RB-Y1 + Wuji Hand 2</div><div class="head">GR-1</div>
+      <img src="./static/images/embodiments/ep1-human.jpg" alt="human"><img src="./static/images/embodiments/ep1-openarm.jpg" alt="OpenArm"><img src="./static/images/embodiments/ep1-rby1.jpg" alt="RB-Y1"><img src="./static/images/embodiments/ep1-gr1.jpg" alt="GR-1">
+      <img src="./static/images/embodiments/ep2-human.jpg" alt="human"><img src="./static/images/embodiments/ep2-openarm.jpg" alt="OpenArm"><img src="./static/images/embodiments/ep2-rby1.jpg" alt="RB-Y1"><img src="./static/images/embodiments/ep2-gr1.jpg" alt="GR-1">
+      <img src="./static/images/embodiments/ep3-human.jpg" alt="human"><img src="./static/images/embodiments/ep3-openarm.jpg" alt="OpenArm"><img src="./static/images/embodiments/ep3-rby1.jpg" alt="RB-Y1"><img src="./static/images/embodiments/ep3-gr1.jpg" alt="GR-1">
+    </div>
+  </div>
+</section>
+
+<!-- ============================== Results ============================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Learning New Tasks from Human Video</h2>
+    <div class="columns is-centered has-text-centered" style="margin-bottom: 1.5rem;">
+      <div class="column"><div class="stat">2% &rarr; 60%</div><div class="stat-label">success on 7 tasks with no robot demonstration<br>(avg. of two robots)</div></div>
+      <div class="column"><div class="stat">45.9%</div><div class="stat-label">on bimanual tasks, though every<br>teleoperated demonstration is single-arm</div></div>
+      <div class="column"><div class="stat">~1/3</div><div class="stat-label">of the collection cost to match<br>teleoperation-only training</div></div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="table results-table">
+        <thead>
+          <tr><th rowspan="2">Method</th><th colspan="2">OpenArm</th><th colspan="2">RB-Y1</th></tr>
+          <tr><th>In-domain</th><th>Out-of-domain</th><th>In-domain</th><th>Out-of-domain</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Teleop only</td><td>47.3</td><td>3.1</td><td>69.6</td><td>1.0</td></tr>
+          <tr><td>+ EgoMimic</td><td>50.0</td><td>5.1</td><td>63.4</td><td>5.1</td></tr>
+          <tr><td>+ Masquerade</td><td>67.9</td><td>8.2</td><td>63.4</td><td>7.7</td></tr>
+          <tr class="ours"><td>+ RoboTryOn (Ours)</td><td>75.9</td><td>73.0</td><td>79.5</td><td>46.9</td></tr>
+          <tr class="sep"><td>RoboTryOn only (no teleop)</td><td>57.1</td><td>48.5</td><td>60.7</td><td>40.3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption has-text-centered">Success rate (%) of &pi;<sub>0.5</sub> over 28 trials per task. Out-of-domain: 7 tasks
+      (novel object, goal, skill, and bimanual) with human videos only.</p>
+
+    <h3 id="rollouts" class="title is-5 has-text-centered" style="margin-top: 2.5rem;">Policy rollouts on tasks with no teleoperated demonstration</h3>
+    <div class="robot-tabs" role="tablist">
+      <button class="robot-tab is-active" data-robot="openarm" role="tab">OpenArm</button>
+      <button class="robot-tab" data-robot="rby1" role="tab">RB-Y1</button>
+    </div>
+    <div class="rollout-panes">
+      <div class="rollouts is-active" data-robot="openarm">
+        <figure><figcaption>PnP Coffee Pot (novel object)</figcaption><video src="./static/videos/rollout_coffee_pot.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>PnP Bottle &rarr; Shelf (novel goal)</figcaption><video src="./static/videos/rollout_shelf.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>Pouring (novel skill)</figcaption><video src="./static/videos/rollout_pour.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>Brushing (novel skill)</figcaption><video src="./static/videos/rollout_brush.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>Air Fryer (bimanual)</figcaption><video src="./static/videos/rollout_airfryer.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>PnP Ball in Cup (bimanual)</figcaption><video src="./static/videos/rollout_ball_in_cup.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+      </div>
+      <div class="rollouts" data-robot="rby1">
+        <figure><figcaption>PnP Coffee Pot (novel object)</figcaption><video src="./static/videos/rollout_rby1_coffee_pot.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>PnP Bottle &rarr; Shelf (novel goal)</figcaption><video src="./static/videos/rollout_rby1_shelf.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>Pouring (novel skill)</figcaption><video src="./static/videos/rollout_rby1_pour.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>Brushing (novel skill)</figcaption><video src="./static/videos/rollout_rby1_brush.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>Box Convey (bimanual)</figcaption><video src="./static/videos/rollout_rby1_box_convey.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+        <figure><figcaption>PnP Ball in Cup (bimanual)</figcaption><video src="./static/videos/rollout_rby1_ball_in_cup.mp4" muted loop playsinline preload="metadata"></video><div class="pair-label"><span>Human demo</span><span>Robot policy</span></div></figure>
+      </div>
+    </div>
+    <p class="caption has-text-centered">Left: one of the human videos the policy learned from. Right: the trained policy on the robot.</p>
+  </div>
+</section>
+
+<!-- ============================== Analysis ============================== -->
+<section class="section" id="analysis">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Analysis</h2>
+
+    <!-- visual gap: short -->
+    <h3 class="title is-5 an-h">Visual gap</h3>
+    <div class="vg">
+      <div class="vg-grid"><figure><div class="ghead">Human video</div><img src="./static/images/analysis/vg-human.jpg" alt="human" loading="lazy"></figure><figure><div class="ghead">EgoMimic</div><img src="./static/images/analysis/vg-egomimic.jpg" alt="egomimic" loading="lazy"></figure><figure><div class="ghead">Masquerade</div><img src="./static/images/analysis/vg-masquerade.jpg" alt="masquerade" loading="lazy"></figure><figure><div class="ghead"><b>RoboTryOn</b></div><img src="./static/images/analysis/vg-robotryon.jpg" alt="robotryon" loading="lazy"></figure><figure><div class="ghead">Real robot</div><img src="./static/images/analysis/vg-real.jpg" alt="real" loading="lazy"></figure></div>
+      <div class="vg-umap">
+        <img class="umap" src="./static/images/analysis/vg-umap.png" alt="UMAP of policy visual features" loading="lazy">
+        <div class="legend">
+          <span><i style="background:#8A8781"></i>Human</span><span><i style="background:#E07B12"></i>EgoMimic</span>
+          <span><i style="background:#7B3FB0"></i>Masquerade</span><span><i style="background:#2A6FC9"></i><b>Ours</b></span>
+          <span><i style="background:#1B1B1B"></i>Real robot</span>
+        </div>
+      </div>
+    </div>
+    <p class="an-p">In the policy&rsquo;s SigLIP feature space, RoboTryOn&rsquo;s synthesized frames <b>overlap real robot frames</b>,
+      while raw, masked, and overlaid human videos form separate clusters (Fr&eacute;chet SigLIP distance <b>125.5 &rarr; 32.7</b>).
+      So, unlike EgoMimic and Masquerade, which must mask or overlay every camera frame during rollouts,
+      <b>RoboTryOn needs no post-processing at test time</b>.</p>
+
+    <!-- action gap: detailed -->
+    <h3 class="title is-5 an-h" style="margin-top:2.5rem;">Action gap</h3>
+    <p class="an-p">Retargeting maps the reconstructed human hand onto the robot. RoboTryOn instead
+      <b>labels the synthesized robot video with an inverse dynamics model (IDM)</b>.</p>
+
+    <div class="an-card">
+      <div class="an-step"><span>1</span>Are the labels executable? (open-loop replay in simulation)</div>
+      <div class="ag-row">
+        <div class="ag-b"><div class="ag-grid"><div class="ghead">Real &rarr; sim</div><div></div><div></div><div class="ghead">Human</div><div class="ghead">Retargeting</div><div class="ghead">w/o wrist corr.</div><div class="ghead"><b>Ours</b></div><img src="./static/images/analysis/ag-real.jpg" alt="real/sim" loading="lazy"><div></div><div class="rowlab">PnP Box</div><img src="./static/images/analysis/ag-ep1-human.jpg" alt="human" loading="lazy"><div class="mk-wrap"><img src="./static/images/analysis/ag-ep1-retarget.jpg" alt="retarget" loading="lazy"><span class="mk no">&#10007;</span></div><div class="mk-wrap"><img src="./static/images/analysis/ag-ep1-idm.jpg" alt="idm" loading="lazy"><span class="mk ok">&#10003;</span></div><div class="mk-wrap"><img src="./static/images/analysis/ag-ep1-ours.jpg" alt="ours" loading="lazy"><span class="mk ok">&#10003;</span></div><img src="./static/images/analysis/ag-sim.png" alt="real/sim" loading="lazy"><div></div><div class="rowlab">PnP Ball</div><img src="./static/images/analysis/ag-ep2-human.jpg" alt="human" loading="lazy"><div class="mk-wrap"><img src="./static/images/analysis/ag-ep2-retarget.jpg" alt="retarget" loading="lazy"><span class="mk no">&#10007;</span></div><div class="mk-wrap"><img src="./static/images/analysis/ag-ep2-idm.jpg" alt="idm" loading="lazy"><span class="mk no">&#10007;</span></div><div class="mk-wrap"><img src="./static/images/analysis/ag-ep2-ours.jpg" alt="ours" loading="lazy"><span class="mk ok">&#10003;</span></div><div class="cap">(a) Real to sim</div><div></div><div class="cap" style="grid-column: 3 / -1;">(b) Grasp moment</div></div></div>
+        <div class="ag-c"><svg viewBox="0 0 230 168" class="chart" role="img" aria-label="Replay success (%)"><line x1="36" y1="126.0" x2="224" y2="126.0" class="grid"/><text x="31" y="129.5" class="tick" text-anchor="end">0</text><line x1="36" y1="98.0" x2="224" y2="98.0" class="grid"/><text x="31" y="101.5" class="tick" text-anchor="end">25</text><line x1="36" y1="70.0" x2="224" y2="70.0" class="grid"/><text x="31" y="73.5" class="tick" text-anchor="end">50</text><line x1="36" y1="42.0" x2="224" y2="42.0" class="grid"/><text x="31" y="45.5" class="tick" text-anchor="end">75</text><line x1="36" y1="14.0" x2="224" y2="14.0" class="grid"/><text x="31" y="17.5" class="tick" text-anchor="end">100</text><line x1="36" y1="126.0" x2="224" y2="126.0" class="ax"/><text transform="translate(10,70.0) rotate(-90)" class="axl" text-anchor="middle">Replay success (%)</text><rect x="52.3" y="87.0" width="30.0" height="39.0" rx="2" fill="#E07B12"><title>Retargeting: 34.8</title></rect><text x="67.3" y="83.0" class="val" text-anchor="middle">34.8</text><text x="67.3" y="141" class="tick" text-anchor="middle">Retarget.</text><rect x="115.0" y="54.8" width="30.0" height="71.2" rx="2" fill="#A9C5EA"><title>Ours w/o wrist corr.: 63.6</title></rect><text x="130.0" y="50.8" class="val" text-anchor="middle">63.6</text><text x="130.0" y="141" class="tick" text-anchor="middle">Ours w/o</text><text x="130.0" y="153" class="tick" text-anchor="middle">wrist corr.</text><rect x="177.7" y="47.9" width="30.0" height="78.1" rx="2" fill="#2A6FC9"><title>Ours: 69.7</title></rect><text x="192.7" y="43.9" class="val" text-anchor="middle">69.7</text><text x="192.7" y="141" class="tick" text-anchor="middle">Ours</text></svg><div class="cap">(c) Replay success, 66 episodes</div></div>
+      </div>
+      <p class="an-p small"><b>2&times; more replays succeed.</b> Retargeted hands reach the object but <b>fail to grasp it</b>;
+        the IDM reads the grasp off the generated robot hand.</p>
+    </div>
+
+    <div class="an-card">
+      <div class="an-step"><span>2</span>Do the labels look like teleoperated actions?</div>
+      <div class="legend"><span><i style="background:#8C8C8C"></i>Teleoperation</span><span><i style="background:#2A6FC9"></i><b>Ours (IDM labels)</b></span><span><i style="background:#E07B12"></i>Retargeting</span></div>
+      <div class="two">
+        <div><svg viewBox="0 0 440 190" class="chart" role="img" aria-label="Thumb rotation (rad)"><line x1="24" y1="150" x2="432" y2="150" class="ax"/><line x1="24" y1="8" x2="24" y2="150" class="ax"/><line x1="103.3" y1="150" x2="103.3" y2="154" class="ax"/><text x="103.3" y="166" class="tick" text-anchor="middle">0.5</text><line x1="216.7" y1="150" x2="216.7" y2="154" class="ax"/><text x="216.7" y="166" class="tick" text-anchor="middle">1</text><line x1="330.0" y1="150" x2="330.0" y2="154" class="ax"/><text x="330.0" y="166" class="tick" text-anchor="middle">1.5</text><text x="228.0" y="184" class="axl" text-anchor="middle">Thumb rotation (rad)</text><text transform="translate(12,79.0) rotate(-90)" class="axl" text-anchor="middle">Density</text><polyline points="29.0,147.1 38.8,147.1 38.9,149.2 48.7,149.2 48.7,149.4 58.5,149.4 58.5,149.1 68.3,149.1 68.3,149.4 78.1,149.4 78.2,149.4 88.0,149.4 88.0,149.0 97.8,149.0 97.8,148.7 107.6,148.7 107.6,148.4 117.4,148.4 117.4,148.0 127.3,148.0 127.3,147.5 137.1,147.5 137.1,146.9 146.9,146.9 146.9,146.9 156.8,146.9 156.7,146.0 166.6,146.0 166.6,144.8 176.4,144.8 176.4,143.8 186.2,143.8 186.2,142.4 196.1,142.4 196.0,142.0 205.9,142.0 205.9,142.8 215.7,142.8 215.7,142.7 225.5,142.7 225.5,142.1 235.3,142.1 235.4,142.6 245.2,142.6 245.2,142.0 255.0,142.0 255.0,139.0 264.8,139.0 264.8,139.2 274.6,139.2 274.7,138.8 284.5,138.8 284.5,138.5 294.3,138.5 294.3,137.0 304.1,137.0 304.1,138.7 313.9,138.7 314.0,135.4 323.8,135.4 323.8,134.8 333.6,134.8 333.6,121.2 343.4,121.2 343.4,112.7 353.2,112.7 353.2,110.6 363.1,110.6 363.1,116.8 372.9,116.8 372.9,121.7 382.7,121.7 382.7,127.7 392.6,127.7 392.5,134.9 402.4,134.9 402.4,143.7 412.2,143.7 412.2,144.5 422.0,144.5" fill="none" stroke="#8C8C8C" stroke-width="1.8"><title>Teleoperation</title></polyline><polyline points="29.0,148.3 38.8,148.3 38.9,149.5 48.7,149.5 48.7,14.8 58.5,14.8 58.5,133.3 68.3,133.3 68.3,136.1 78.1,136.1 78.2,136.5 88.0,136.5 88.0,136.8 97.8,136.8 97.8,138.0 107.6,138.0 107.6,138.8 117.4,138.8 117.4,139.9 127.3,139.9 127.3,139.6 137.1,139.6 137.1,139.6 146.9,139.6 146.9,140.0 156.8,140.0 156.7,140.8 166.6,140.8 166.6,140.5 176.4,140.5 176.4,139.0 186.2,139.0 186.2,137.7 196.1,137.7 196.0,136.0 205.9,136.0 205.9,135.4 215.7,135.4 215.7,136.0 225.5,136.0 225.5,138.3 235.3,138.3 235.4,137.6 245.2,137.6 245.2,139.6 255.0,139.6 255.0,141.2 264.8,141.2 264.8,143.7 274.6,143.7 274.7,145.6 284.5,145.6 284.5,146.9 294.3,146.9 294.3,148.2 304.1,148.2 304.1,148.8 313.9,148.8 314.0,149.4 323.8,149.4 323.8,149.6 333.6,149.6 333.6,149.7 343.4,149.7 343.4,150.0 353.2,150.0 353.2,150.0 363.1,150.0 363.1,150.0 372.9,150.0 372.9,150.0 382.7,150.0 382.7,150.0 392.6,150.0 392.5,150.0 402.4,150.0 402.4,150.0 412.2,150.0 412.2,150.0 422.0,150.0" fill="none" stroke="#E07B12" stroke-width="1.8"><title>Retargeting</title></polyline><polyline points="29.0,149.7 38.8,149.7 38.9,149.6 48.7,149.6 48.7,149.1 58.5,149.1 58.5,148.5 68.3,148.5 68.3,147.5 78.1,147.5 78.2,146.9 88.0,146.9 88.0,145.3 97.8,145.3 97.8,142.5 107.6,142.5 107.6,141.1 117.4,141.1 117.4,138.4 127.3,138.4 127.3,137.3 137.1,137.3 137.1,136.6 146.9,136.6 146.9,135.9 156.8,135.9 156.7,135.7 166.6,135.7 166.6,135.4 176.4,135.4 176.4,137.6 186.2,137.6 186.2,140.3 196.1,140.3 196.0,140.2 205.9,140.2 205.9,142.0 215.7,142.0 215.7,143.1 225.5,143.1 225.5,144.0 235.3,144.0 235.4,144.4 245.2,144.4 245.2,144.1 255.0,144.1 255.0,143.8 264.8,143.8 264.8,143.1 274.6,143.1 274.7,141.4 284.5,141.4 284.5,137.2 294.3,137.2 294.3,132.3 304.1,132.3 304.1,126.5 313.9,126.5 314.0,124.9 323.8,124.9 323.8,122.3 333.6,122.3 333.6,121.0 343.4,121.0 343.4,124.6 353.2,124.6 353.2,130.1 363.1,130.1 363.1,135.3 372.9,135.3 372.9,141.4 382.7,141.4 382.7,146.9 392.6,146.9 392.5,149.3 402.4,149.3 402.4,150.0 412.2,150.0 412.2,150.0 422.0,150.0" fill="none" stroke="#2A6FC9" stroke-width="1.8"><title>Ours (IDM labels)</title></polyline></svg></div>
+        <div><svg viewBox="0 0 440 190" class="chart" role="img" aria-label="Finger flexion (rad)"><line x1="24" y1="150" x2="432" y2="150" class="ax"/><line x1="24" y1="8" x2="24" y2="150" class="ax"/><line x1="48.0" y1="150" x2="48.0" y2="154" class="ax"/><text x="48.0" y="166" class="tick" text-anchor="middle">0</text><line x1="168.0" y1="150" x2="168.0" y2="154" class="ax"/><text x="168.0" y="166" class="tick" text-anchor="middle">0.5</text><line x1="288.0" y1="150" x2="288.0" y2="154" class="ax"/><text x="288.0" y="166" class="tick" text-anchor="middle">1</text><line x1="408.0" y1="150" x2="408.0" y2="154" class="ax"/><text x="408.0" y="166" class="tick" text-anchor="middle">1.5</text><text x="228.0" y="184" class="axl" text-anchor="middle">Finger flexion (rad)</text><text transform="translate(12,79.0) rotate(-90)" class="axl" text-anchor="middle">Density</text><polyline points="32.3,150.0 42.2,150.0 42.2,150.0 52.1,150.0 52.1,14.8 62.0,14.8 62.0,83.7 71.9,83.7 71.9,99.2 81.7,99.2 81.7,114.9 91.6,114.9 91.6,127.7 101.5,127.7 101.5,137.3 111.4,137.3 111.4,142.5 121.3,142.5 121.3,145.2 131.2,145.2 131.2,147.3 141.0,147.3 141.1,148.2 150.9,148.2 150.9,148.2 160.8,148.2 160.8,148.2 170.7,148.2 170.7,148.4 180.6,148.4 180.6,148.4 190.5,148.4 190.5,148.4 200.3,148.4 200.4,148.3 210.2,148.3 210.2,148.4 220.1,148.4 220.1,148.2 230.0,148.2 230.0,146.0 239.9,146.0 239.9,146.4 249.8,146.4 249.8,144.4 259.7,144.4 259.7,141.8 269.5,141.8 269.5,139.4 279.4,139.4 279.4,135.0 289.3,135.0 289.3,134.7 299.2,134.7 299.2,135.2 309.1,135.2 309.1,131.9 319.0,131.9 318.9,133.6 328.8,133.6 328.8,135.2 338.7,135.2 338.7,134.9 348.6,134.9 348.6,138.8 358.5,138.8 358.5,137.8 368.4,137.8 368.4,137.3 378.2,137.3 378.2,142.7 388.1,142.7 388.1,148.8 398.0,148.8 398.0,150.0 407.9,150.0 407.9,150.0 417.8,150.0 417.8,150.0 427.7,150.0" fill="none" stroke="#8C8C8C" stroke-width="1.8"><title>Teleoperation</title></polyline><polyline points="32.3,150.0 42.2,150.0 42.2,150.0 52.1,150.0 52.1,150.0 62.0,150.0 62.0,149.7 71.9,149.7 71.9,149.9 81.7,149.9 81.7,149.6 91.6,149.6 91.6,148.1 101.5,148.1 101.5,146.2 111.4,146.2 111.4,143.5 121.3,143.5 121.3,140.8 131.2,140.8 131.2,133.4 141.0,133.4 141.1,122.0 150.9,122.0 150.9,113.4 160.8,113.4 160.8,108.8 170.7,108.8 170.7,100.8 180.6,100.8 180.6,107.1 190.5,107.1 190.5,121.3 200.3,121.3 200.4,128.4 210.2,128.4 210.2,131.1 220.1,131.1 220.1,132.9 230.0,132.9 230.0,134.8 239.9,134.8 239.9,136.7 249.8,136.7 249.8,137.5 259.7,137.5 259.7,134.8 269.5,134.8 269.5,135.7 279.4,135.7 279.4,136.5 289.3,136.5 289.3,136.9 299.2,136.9 299.2,135.6 309.1,135.6 309.1,136.3 319.0,136.3 318.9,138.2 328.8,138.2 328.8,139.8 338.7,139.8 338.7,141.4 348.6,141.4 348.6,142.4 358.5,142.4 358.5,143.5 368.4,143.5 368.4,143.1 378.2,143.1 378.2,139.4 388.1,139.4 388.1,134.4 398.0,134.4 398.0,136.8 407.9,136.8 407.9,150.0 417.8,150.0 417.8,150.0 427.7,150.0" fill="none" stroke="#E07B12" stroke-width="1.8"><title>Retargeting</title></polyline><polyline points="32.3,150.0 42.2,150.0 42.2,150.0 52.1,150.0 52.1,126.0 62.0,126.0 62.0,83.5 71.9,83.5 71.9,74.6 81.7,74.6 81.7,73.2 91.6,73.2 91.6,104.4 101.5,104.4 101.5,129.4 111.4,129.4 111.4,138.5 121.3,138.5 121.3,142.8 131.2,142.8 131.2,144.0 141.0,144.0 141.1,145.0 150.9,145.0 150.9,145.7 160.8,145.7 160.8,146.4 170.7,146.4 170.7,146.6 180.6,146.6 180.6,146.5 190.5,146.5 190.5,146.7 200.3,146.7 200.4,146.6 210.2,146.6 210.2,146.6 220.1,146.6 220.1,145.9 230.0,145.9 230.0,145.8 239.9,145.8 239.9,145.3 249.8,145.3 249.8,144.7 259.7,144.7 259.7,144.1 269.5,144.1 269.5,141.8 279.4,141.8 279.4,140.2 289.3,140.2 289.3,137.2 299.2,137.2 299.2,134.3 309.1,134.3 309.1,137.3 319.0,137.3 318.9,140.7 328.8,140.7 328.8,139.8 338.7,139.8 338.7,134.4 348.6,134.4 348.6,127.0 358.5,127.0 358.5,129.4 368.4,129.4 368.4,145.3 378.2,145.3 378.2,143.0 388.1,143.0 388.1,148.1 398.0,148.1 398.0,150.0 407.9,150.0 407.9,150.0 417.8,150.0 417.8,150.0 427.7,150.0" fill="none" stroke="#2A6FC9" stroke-width="1.8"><title>Ours (IDM labels)</title></polyline></svg></div>
+      </div>
+      <div class="cap">Right-hand actions over all tasks</div>
+      <p class="an-p small">IDM labels <b>match the teleoperated distribution</b>; retargeted hand actions do not.</p>
+    </div>
+
+    <div class="an-card">
+      <div class="an-step"><span>3</span>Do they agree with teleoperated data during training?</div>
+      <div class="legend"><span><i style="background:#2A6FC9"></i><b>Ours</b></span><span><i style="background:#E07B12"></i>Masquerade</span><span><i style="background:#F0B676"></i>EgoMimic</span></div>
+      <div class="two">
+        <div><svg viewBox="0 0 440 210" class="chart" role="img" aria-label="Gradient cosine"><line x1="48" y1="138.5" x2="434" y2="138.5" class="grid"/><text x="43" y="142.0" class="tick" text-anchor="end">0</text><line x1="48" y1="97.0" x2="434" y2="97.0" class="grid"/><text x="43" y="100.5" class="tick" text-anchor="end">0.25</text><line x1="48" y1="55.5" x2="434" y2="55.5" class="grid"/><text x="43" y="59.0" class="tick" text-anchor="end">0.5</text><line x1="48" y1="14.0" x2="434" y2="14.0" class="grid"/><text x="43" y="17.5" class="tick" text-anchor="end">0.75</text><line x1="48" y1="138.5" x2="434" y2="138.5" class="ax"/><text transform="translate(10,97.0) rotate(-90)" class="axl" text-anchor="middle">Gradient cosine</text><rect x="96.5" y="50.2" width="30.0" height="88.3" rx="2" fill="#2A6FC9"><title>Ours: 0.53</title></rect><text x="111.5" y="46.2" class="val" text-anchor="middle">0.53</text><rect x="129.5" y="110.3" width="30.0" height="28.2" rx="2" fill="#E07B12"><title>Masquerade: 0.17</title></rect><text x="144.5" y="106.3" class="val" text-anchor="middle">0.17</text><rect x="162.5" y="115.6" width="30.0" height="22.9" rx="2" fill="#F0B676"><title>EgoMimic: 0.14</title></rect><text x="177.5" y="111.6" class="val" text-anchor="middle">0.14</text><text x="144.5" y="195" class="tick" text-anchor="middle">All params</text><rect x="289.5" y="53.8" width="30.0" height="84.7" rx="2" fill="#2A6FC9"><title>Ours: 0.51</title></rect><text x="304.5" y="49.8" class="val" text-anchor="middle">0.51</text><rect x="322.5" y="138.5" width="30.0" height="5.5" rx="2" fill="#E07B12"><title>Masquerade: -0.03</title></rect><text x="337.5" y="155.0" class="val" text-anchor="middle">-0.03</text><rect x="355.5" y="138.5" width="30.0" height="8.6" rx="2" fill="#F0B676"><title>EgoMimic: -0.05</title></rect><text x="370.5" y="158.1" class="val" text-anchor="middle">-0.05</text><text x="337.5" y="195" class="tick" text-anchor="middle">Action expert</text></svg><div class="cap">(a) Gradient cosine with teleoperated data</div></div>
+        <div><svg viewBox="0 0 440 210" class="chart" role="img" aria-label="Close to teleoperation"><line x1="48" y1="151.5" x2="430" y2="151.5" class="grid"/><text x="43" y="155.0" class="tick" text-anchor="end">0</text><line x1="48" y1="82.8" x2="430" y2="82.8" class="grid"/><text x="43" y="86.2" class="tick" text-anchor="end">50</text><line x1="48" y1="14.0" x2="430" y2="14.0" class="grid"/><text x="43" y="17.5" class="tick" text-anchor="end">100</text><text transform="translate(10,91.0) rotate(-90)" class="axl" text-anchor="middle">Close to teleop. (%)</text><text x="128" y="184" class="tick" text-anchor="middle">In-</text><text x="128" y="196" class="tick" text-anchor="middle">domain</text><text x="350" y="184" class="tick" text-anchor="middle">Out-of-</text><text x="350" y="196" class="tick" text-anchor="middle">domain</text><line x1="128" y1="59.1" x2="350" y2="76.0" stroke="#2A6FC9" stroke-width="2"><title>Ours</title></line><circle cx="128" cy="59.1" r="4" fill="#2A6FC9" stroke="#fff" stroke-width="1.5"><title>Ours: 67.2%</title></circle><circle cx="350" cy="76.0" r="4" fill="#2A6FC9" stroke="#fff" stroke-width="1.5"><title>Ours: 54.9%</title></circle><text x="120" y="62.6" class="val" text-anchor="end">67</text><text x="358" y="79.5" class="val">55</text><line x1="128" y1="96.5" x2="350" y2="140.9" stroke="#E07B12" stroke-width="2"><title>Masquerade</title></line><circle cx="128" cy="96.5" r="4" fill="#E07B12" stroke="#fff" stroke-width="1.5"><title>Masquerade: 40.0%</title></circle><circle cx="350" cy="140.9" r="4" fill="#E07B12" stroke="#fff" stroke-width="1.5"><title>Masquerade: 7.7%</title></circle><text x="120" y="94.5" class="val" text-anchor="end">40</text><text x="358" y="149.5" class="val">8</text><line x1="128" y1="101.2" x2="350" y2="137.8" stroke="#F0B676" stroke-width="2"><title>EgoMimic</title></line><circle cx="128" cy="101.2" r="4" fill="#F0B676" stroke="#fff" stroke-width="1.5"><title>EgoMimic: 36.6%</title></circle><circle cx="350" cy="137.8" r="4" fill="#F0B676" stroke="#fff" stroke-width="1.5"><title>EgoMimic: 10.0%</title></circle><text x="120" y="110.2" class="val" text-anchor="end">37</text><text x="358" y="135.8" class="val">10</text></svg><div class="cap">(b) Hand actions within the teleoperated range in robot rollouts</div></div>
+      </div>
+      <p class="an-p small">Our data yields <b>policy gradients aligned with those of teleoperated data</b> (cosine 0.53 vs. &le;0.17), and the policy trained on our data
+        <b>stays in the teleoperated action range on new tasks</b> (55% vs. &le;10%). Both baselines use retargeted actions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== BibTeX ============================== -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">BibTeX</h2>
+    <div class="bibtex-wrap">
+    <button class="copy-btn" id="copy-bibtex" type="button" aria-label="Copy BibTeX"><svg viewBox="0 0 448 512"><path d="M384 336H192c-8.8 0-16-7.2-16-16V64c0-8.8 7.2-16 16-16h140.1L400 115.9V320c0 8.8-7.2 16-16 16zM192 384h192c35.3 0 64-28.7 64-64V115.9c0-12.7-5.1-24.9-14.1-33.9L366.1 14.1c-9-9-21.2-14.1-33.9-14.1H192c-35.3 0-64 28.7-64 64v256c0 35.3 28.7 64 64 64zM64 128c-35.3 0-64 28.7-64 64v256c0 35.3 28.7 64 64 64h192c35.3 0 64-28.7 64-64v-32h-48v32c0 8.8-7.2 16-16 16H64c-8.8 0-16-7.2-16-16V192c0-8.8 7.2-16 16-16h32v-48H64z"/></svg><span>Copy</span></button>
+    <pre><code id="bibtex-text">@article{lee2026robotryon,
+  title   = {Synthesizing Dexterous Robot Demonstrations from Human Videos via Virtual Try-On},
+  author  = {Lee, Seungyong and Jang, Suhyeok and Kim, Minyoung and Shin, Jinwoo},
+  journal = {arXiv preprint arXiv:2611.05163},
+  year    = {2026}
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" style="padding: 2rem 1.5rem;">
+  <div class="content has-text-centered is-size-7">
+    Website template adapted from <a href="https://nerfies.github.io/">Nerfies</a>
+    (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>).
+  </div>
+</footer>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.robot-tab'), panes = document.querySelectorAll('.rollout-panes .rollouts');
+  var order = ['openarm', 'rby1'], cur = 0, auto = true, DWELL = 15000, t0 = 0;
+  function show(i) {
+    cur = i;
+    tabs.forEach(function (b) { b.classList.toggle('is-active', b.dataset.robot === order[i]); var bar = b.querySelector('.bar'); if (bar) bar.style.width = '0'; });
+    panes.forEach(function (p) {
+      var on = p.dataset.robot === order[i];
+      p.classList.toggle('is-active', on);
+      p.querySelectorAll('video').forEach(function (v) { if (on) { v.currentTime = 0; v.play().catch(function () {}); } else v.pause(); });
+    });
+    t0 = performance.now();
+  }
+  tabs.forEach(function (b, i) {
+    var bar = document.createElement('span'); bar.className = 'bar'; b.appendChild(bar);
+    b.addEventListener('click', function () { auto = false; show(order.indexOf(b.dataset.robot)); });
+  });
+  var iv = setInterval(function () {
+    if (!auto) { clearInterval(iv); return; }
+    var f = Math.min((performance.now() - t0) / DWELL, 1), bar = tabs[cur].querySelector('.bar');
+    if (bar) bar.style.width = (f * 100) + '%';
+    if (f >= 1) show((cur + 1) % order.length);
+  }, 100);
+  show(0);
+})();
+</script>
+<script>
+(function () {
+  var btn = document.getElementById('copy-bibtex'), label = btn.querySelector('span');
+  function done(ok) {
+    label.textContent = ok ? 'Copied!' : 'Press Ctrl+C';
+    btn.classList.toggle('done', ok);
+    setTimeout(function () { label.textContent = 'Copy'; btn.classList.remove('done'); }, 1500);
+  }
+  function fallback(text) {
+    var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done(ok);
+  }
+  btn.addEventListener('click', function () {
+    var text = document.getElementById('bibtex-text').innerText;
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallback(text); });
+    else fallback(text);
+  });
+})();
+</script>
+</body>
+</html>
